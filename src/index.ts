@@ -15,6 +15,7 @@
 import { verifyApiKey, issueSessionToken, verifyJwt, createChallenge, consumeChallenge } from "./auth.ts";
 import type { SessionPayload } from "./auth.ts";
 import { loadPolicy, storePolicy, resolvePolicySetId, resolveTierId, resolveEffectiveTier, listPolicySets } from "./policy.ts";
+import type { PolicyDoc } from "./policy.ts";
 import { applyQuotasOrThrow, trackResponseBytes, toolAllowedOrThrow, callerVerificationOrThrow, redactOutput } from "./enforce.ts";
 import type { Caller } from "./enforce.ts";
 import { ToolRouter, BackendError } from "./backends.ts";
@@ -149,7 +150,7 @@ async function handleGetPolicy(req: Request, env: Env): Promise<Response> {
 async function handleSeedPolicy(req: Request, env: Env): Promise<Response> {
   if (!requireAdmin(req, env)) return err("Admin authentication required", 401);
   try {
-    const policy = await req.json();
+    const policy = await req.json() as PolicyDoc;
     await storePolicy(env.POLICY_KV, policy);
     return json({ ok: true, message: "Policy stored successfully" });
   } catch (e) {

@@ -106,7 +106,7 @@ export async function callerVerificationOrThrow(
       identity: expected.identity,
       callerType: c.type,
       toolName: expected.toolName,
-      toolId: c.tool_id,
+      ...(c.tool_id !== undefined ? { toolId: c.tool_id } : {}),
     });
     if (!result.ok) throw new Error(`Caller token verification failed: ${result.reason}`);
   }
