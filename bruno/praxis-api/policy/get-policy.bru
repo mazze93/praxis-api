@@ -1,0 +1,22 @@
+meta {
+  name: Get Policy
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/policy
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{session_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.version: isDefined
+  res.body.policy_sets: isDefined
+}

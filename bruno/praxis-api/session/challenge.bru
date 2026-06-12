@@ -1,0 +1,32 @@
+meta {
+  name: 1. Request Challenge
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/session/challenge
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "identity": "daedalus"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("challenge_id", res.body.challenge_id);
+    bru.setVar("nonce", res.body.nonce);
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.challenge_id: isDefined
+  res.body.nonce: isDefined
+  res.body.ttl_seconds: eq 300
+}

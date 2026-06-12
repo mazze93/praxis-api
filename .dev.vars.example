@@ -1,0 +1,11 @@
+# Copy to .dev.vars — never commit the real file
+# For local dev, wrangler uses these as Worker secrets
+
+SESSION_JWT_SECRET=change-me-min-32-chars-xxxxxxxxxxxxxxxx
+CALLER_HMAC_SECRET=change-me-min-32-chars-yyyyyyyyyyyyyyyy
+ADMIN_API_KEY=change-me-admin-key
+APIKEY_DAEDALUS=change-me-daedalus-key
+APIKEY_SECURE_PRIDE=change-me-secure-pride-key
+
+# Local KV is handled automatically by wrangler dev (sqlite-backed)
+# SESSION_TTL_HOURS is in wrangler.jsonc vars (default 8)

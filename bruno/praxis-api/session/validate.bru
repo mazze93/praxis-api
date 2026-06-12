@@ -1,0 +1,21 @@
+meta {
+  name: 3. Validate Session
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/session
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{session_token}}
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.identity: eq daedalus
+}

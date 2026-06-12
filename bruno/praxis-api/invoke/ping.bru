@@ -1,0 +1,36 @@
+meta {
+  name: Invoke Tool — ping
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/invoke-tool
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{session_token}}
+}
+
+body:json {
+  {
+    "request_id": "req-local-001",
+    "tool_name": "ping",
+    "input": {},
+    "caller": {
+      "type": "model"
+    },
+    "meta": {
+      "identity": "daedalus",
+      "trigger": "research"
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.tool_name: eq ping
+}

@@ -1,0 +1,35 @@
+meta {
+  name: Invoke Tool — deny (delete_ pattern)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/invoke-tool
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{session_token}}
+}
+
+body:json {
+  {
+    "request_id": "req-local-deny-001",
+    "tool_name": "delete_user",
+    "input": { "user_id": "test" },
+    "caller": {
+      "type": "model"
+    },
+    "meta": {
+      "identity": "daedalus",
+      "trigger": "admin"
+    }
+  }
+}
+
+assert {
+  res.status: eq 403
+  res.body.ok: eq false
+}

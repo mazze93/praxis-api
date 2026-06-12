@@ -1,0 +1,31 @@
+meta {
+  name: 2. Unlock Session
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/session/unlock
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "challenge_id": "{{challenge_id}}",
+    "identity": "daedalus",
+    "api_key": "{{api_key}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("session_token", res.body.token);
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.token: isDefined
+}

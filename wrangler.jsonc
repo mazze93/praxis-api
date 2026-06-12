@@ -1,0 +1,53 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "praxis-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // ── KV Namespaces ────────────────────────────────────────────────────────
+  "kv_namespaces": [
+    {
+      "binding": "POLICY_KV",
+      "id": "REPLACE_WITH_POLICY_KV_ID",
+      "preview_id": "REPLACE_WITH_POLICY_KV_PREVIEW_ID"
+    },
+    {
+      "binding": "SESSION_KV",
+      "id": "REPLACE_WITH_SESSION_KV_ID",
+      "preview_id": "REPLACE_WITH_SESSION_KV_PREVIEW_ID"
+    },
+    {
+      "binding": "QUOTA_KV",
+      "id": "REPLACE_WITH_QUOTA_KV_ID",
+      "preview_id": "REPLACE_WITH_QUOTA_KV_PREVIEW_ID"
+    }
+  ],
+
+  // ── Rate Limiters ────────────────────────────────────────────────────────
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "INVOKE_RATE_LIMITER",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": {
+          "limit": 60,
+          "period": 60
+        }
+      }
+    ]
+  },
+
+  // ── Vars (non-secret) ────────────────────────────────────────────────────
+  "vars": {
+    "SESSION_TTL_HOURS": "8"
+  }
+
+  // ── Secrets (set via `wrangler secret put`) ──────────────────────────────
+  // SESSION_JWT_SECRET     — HS256 key (min 32 random chars)
+  // CALLER_HMAC_SECRET     — HMAC key for caller token verification
+  // ADMIN_API_KEY          — admin route auth
+  // APIKEY_DAEDALUS        — API key for daedalus identity
+  // APIKEY_SECURE_PRIDE    — API key for secure_pride identity
+}
