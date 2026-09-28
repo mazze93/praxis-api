@@ -1,17 +1,22 @@
 {
   "name": "praxis-api",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "types": "wrangler types",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "config:render": "node scripts/render-wrangler.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
     "typescript": "^5.7.3",
     "wrangler": "^3.105.0"
+  },
+  "description": "Policy enforcement gateway for AI-agent tool invocation on Cloudflare Workers",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
   }
 }
