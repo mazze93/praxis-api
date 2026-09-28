@@ -96,7 +96,7 @@ async function handleChallenge(req: Request, env: Env): Promise<Response> {
   const { identity } = await req.json<{ identity: string }>();
   if (!identity || typeof identity !== "string") return err("identity required", 400);
 
-  // Rate limit: 10 challenges/min per IP
+  // Rate limit: shared limiter, currently 60 challenges/min per IP
   const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
   const rl = await env.INVOKE_RATE_LIMITER.limit({ key: `challenge:${ip}` });
   if (!rl.success) return err("Rate limit exceeded — try again in a moment", 429);
@@ -225,7 +225,7 @@ async function handleInvokeTool(req: Request, env: Env): Promise<Response> {
     const rawText = typeof result === "string" ? result : JSON.stringify(result);
 
     // 5. Byte tracking + redaction
-    await trackResponseBytes(env.QUOTA_KV, request_id, rawText.length, tier);
+    await trackResponseBytes(env.QUOTA_KV, request_id, new TextEncoder().encode(rawText).byteLength, tier);
     const safeText = redactOutput(rawText, tier.redaction);
 
     return json({

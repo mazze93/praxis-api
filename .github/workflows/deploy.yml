@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      POLICY_KV_ID: ${{ vars.POLICY_KV_ID }}
+      POLICY_KV_PREVIEW_ID: ${{ vars.POLICY_KV_PREVIEW_ID }}
+      SESSION_KV_ID: ${{ vars.SESSION_KV_ID }}
+      SESSION_KV_PREVIEW_ID: ${{ vars.SESSION_KV_PREVIEW_ID }}
+      QUOTA_KV_ID: ${{ vars.QUOTA_KV_ID }}
+      QUOTA_KV_PREVIEW_ID: ${{ vars.QUOTA_KV_PREVIEW_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run config:render
+      - run: npx wrangler deploy --config .wrangler.generated.jsonc
+      - name: Install Worker secrets
+        env:
+          SESSION_JWT_SECRET: ${{ secrets.SESSION_JWT_SECRET }}
+          CALLER_HMAC_SECRET: ${{ secrets.CALLER_HMAC_SECRET }}
+          ADMIN_API_KEY: ${{ secrets.ADMIN_API_KEY }}
+          APIKEY_DAEDALUS: ${{ secrets.APIKEY_DAEDALUS }}
+          APIKEY_SECURE_PRIDE: ${{ secrets.APIKEY_SECURE_PRIDE }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$SESSION_JWT_SECRET" | npx wrangler secret put SESSION_JWT_SECRET --config .wrangler.generated.jsonc
+          printf '%s' "$CALLER_HMAC_SECRET" | npx wrangler secret put CALLER_HMAC_SECRET --config .wrangler.generated.jsonc
+          printf '%s' "$ADMIN_API_KEY" | npx wrangler secret put ADMIN_API_KEY --config .wrangler.generated.jsonc
+          printf '%s' "$APIKEY_DAEDALUS" | npx wrangler secret put APIKEY_DAEDALUS --config .wrangler.generated.jsonc
+          printf '%s' "$APIKEY_SECURE_PRIDE" | npx wrangler secret put APIKEY_SECURE_PRIDE --config .wrangler.generated.jsonc

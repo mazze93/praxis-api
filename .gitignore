@@ -6,3 +6,5 @@ dist/
 
 # wrangler-generated
 worker-configuration.d.ts
+
+.wrangler.generated.jsonc
