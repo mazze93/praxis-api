@@ -136,7 +136,8 @@ export function redactOutput(raw: string, redaction: TierDef["redaction"]): stri
 
   let out = raw;
   for (const p of redaction.patterns ?? []) {
-    const flags = p.flags?.includes("g") ? p.flags : `${p.flags ?? ""}g`;\n    out = out.replace(new RegExp(p.regex, flags), `[REDACTED:${p.name}]`);
+    const flags = p.flags?.includes("g") ? p.flags : `${p.flags ?? ""}g`;
+    out = out.replace(new RegExp(p.regex, flags), `[REDACTED:${p.name}]`);
   }
   const max = redaction.max_output_bytes_to_model ?? 100_000;
   return utf8SafeTruncate(out, max);
