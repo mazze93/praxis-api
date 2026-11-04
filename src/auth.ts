@@ -35,6 +35,28 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
   );
 }
 
+// ── Expiry ───────────────────────────────────────────────────────────────────
+// A missing or non-numeric `exp` must reject, never pass: `undefined < now`
+// and `"never" < now` are both false, so a bare `exp < now` check treats a
+// token with no usable expiry as valid forever.
+
+export function isUnexpired(exp: unknown, now: number): boolean {
+  return typeof exp === "number" && Number.isFinite(exp) && exp >= now;
+}
+
+// ── Constant-time comparison ─────────────────────────────────────────────────
+// HMAC both values under a fixed key, then compare the equal-length digests,
+// so neither the length nor a matching prefix of `expected` leaks via timing.
+
+export async function constantTimeEqual(provided: string, expected: string): Promise<boolean> {
+  const key = await hmacKey("praxis-constant-time-comparison");
+  const a = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(provided)));
+  const b = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(expected)));
+  let diff = a.length ^ b.length;
+  for (let i = 0; i < a.length && i < b.length; i++) diff |= a[i]! ^ b[i]!;
+  return diff === 0;
+}
+
 // Static header — HS256 JWT
 const HDR = b64url(new TextEncoder().encode('{"alg":"HS256","typ":"JWT"}').buffer as ArrayBuffer);
 
@@ -70,7 +92,7 @@ export async function verifyJwt<T extends { exp: number }>(
   );
   if (!ok) throw new Error("invalid signature");
   const payload = JSON.parse(new TextDecoder().decode(decodeB64url(body))) as T;
-  if (payload.exp < Math.floor(Date.now() / 1000)) throw new Error("token expired");
+  if (!isUnexpired(payload.exp, Math.floor(Date.now() / 1000))) throw new Error("token expired");
   return payload;
 }
 
@@ -134,16 +156,7 @@ export async function verifyApiKey(
   const envVar = `APIKEY_${identity.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
   const expected = env[envVar];
   if (!expected) return false;
-  // Constant-time comparison via HMAC
-  const key = await hmacKey("apikey-comparison-constant-time");
-  const a = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(providedKey));
-  const b = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(expected));
-  const av = new Uint8Array(a);
-  const bv = new Uint8Array(b);
-  if (av.length !== bv.length) return false;
-  let diff = 0;
-  for (let i = 0; i < av.length; i++) diff |= av[i]! ^ bv[i]!;
-  return diff === 0;
+  return constantTimeEqual(providedKey, expected);
 }
 
 // ── Caller HMAC token ────────────────────────────────────────────────────────
@@ -196,7 +209,7 @@ export async function verifyCallerToken(
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (payload.exp < now) return { ok: false, reason: "token expired" };
+  if (!isUnexpired(payload.exp, now)) return { ok: false, reason: "token expired or exp missing" };
   if (payload.request_id !== expected.requestId) return { ok: false, reason: "request_id mismatch" };
   if (payload.identity !== expected.identity) return { ok: false, reason: "identity mismatch" };
   if (payload.caller_type !== expected.callerType) return { ok: false, reason: "caller_type mismatch" };

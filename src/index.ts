@@ -12,7 +12,7 @@
  *   POST /invoke-tool            — policy-gated tool invocation (session auth)
  */
 
-import { verifyApiKey, issueSessionToken, verifyJwt, createChallenge, consumeChallenge } from "./auth.ts";
+import { verifyApiKey, issueSessionToken, verifyJwt, createChallenge, consumeChallenge, constantTimeEqual } from "./auth.ts";
 import type { SessionPayload } from "./auth.ts";
 import { loadPolicy, storePolicy, resolvePolicySetId, resolveTierId, resolveEffectiveTier, listPolicySets } from "./policy.ts";
 import type { PolicyDoc } from "./policy.ts";
@@ -81,9 +81,14 @@ async function requireSession(
 
 // ── Admin middleware ──────────────────────────────────────────────────────────
 
-function requireAdmin(req: Request, env: Env): boolean {
-  const auth = req.headers.get("Authorization");
-  return auth === `Bearer ${env.ADMIN_API_KEY}`;
+// Fails closed: with ADMIN_API_KEY unset, the old template comparison
+// accepted the literal header "Bearer undefined".
+async function requireAdmin(req: Request, env: Env): Promise<boolean> {
+  const expected = env.ADMIN_API_KEY;
+  if (typeof expected !== "string" || expected.length === 0) return false;
+  const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.startsWith("Bearer ")) return false;
+  return constantTimeEqual(auth.slice(7), expected);
 }
 
 // ── Handlers ─────────────────────────────────────────────────────────────────
@@ -148,7 +153,7 @@ async function handleGetPolicy(req: Request, env: Env): Promise<Response> {
 }
 
 async function handleSeedPolicy(req: Request, env: Env): Promise<Response> {
-  if (!requireAdmin(req, env)) return err("Admin authentication required", 401);
+  if (!(await requireAdmin(req, env))) return err("Admin authentication required", 401);
   try {
     const policy = await req.json() as PolicyDoc;
     await storePolicy(env.POLICY_KV, policy);
